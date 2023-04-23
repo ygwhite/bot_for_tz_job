@@ -10,6 +10,7 @@ async def start_command(message: types.Message):
         "Привет! Я могу показать тебе погоду в твоём городе, показать курс валют, прислать смешную картинку и создать опрос для группового чата")
 
 
+random_picture.weather_start_handlers(dp)
 exchange_rate.exchange_rate_start_handlers(dp)
 weather.weather_start_handlers(dp)
 
