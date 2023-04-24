@@ -1,4 +1,5 @@
 # импортируем необходимые классы из библиотеки aiogram
+from aiogram import Dispatcher, types
 from aiogram.types import Poll, PollOption, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
@@ -13,21 +14,21 @@ class PollStates(StatesGroup):
     waiting_for_option = State()
 
 # функция-обработчик "запуска" опроса
-async def start_poll_handler(message: Message, state: FSMContext):
+async def start_poll_handler(message: types.Message, state: FSMContext):
     # запрос вопроса опроса
     await message.answer('Введите вопрос опроса:')
     # отправляем бота в состояние ожидания ввода вопроса
     await PollStates.waiting_for_question.set()
 
 # функция-обработчик введенного вопроса
-async def process_question_handler(message: Message, state: FSMContext):
+async def process_question_handler(message: types.Message, state: FSMContext):
     # сохраняем введенный вопрос и переходим в состояние ожидания количества ответов в опросе
     await state.update_data(question=message.text)
     await message.answer('Введите количество вариантов ответа:')
     await PollStates.waiting_for_options_count.set()
 
 # функция-обработчик количества ответов в опросе
-async def process_options_count_handler(message: Message, state: FSMContext):
+async def process_options_count_handler(message: types.Message, state: FSMContext):
     try:
         # пробуем получить введенное количество ответов и привести его к целому числу
         options_count = int(message.text)
@@ -42,7 +43,7 @@ async def process_options_count_handler(message: Message, state: FSMContext):
     await PollStates.waiting_for_option.set()
 
 # функция-обработчик введенных ответов
-async def process_option_handler(message: Message, state: FSMContext):
+async def process_option_handler(message: types.Message, state: FSMContext):
     # преобразуем варианты ответа из строки в список
     options = message.text.split(',')
 
@@ -57,16 +58,16 @@ async def process_option_handler(message: Message, state: FSMContext):
     for option in options:
         poll_options.append(PollOption(text=option.strip(), voter_count=0))
 
-    poll = Poll(question=data['question'], options=poll_options, allows_multiple_answers=True, is_anonymous=False, type=Poll.QUIZ)
+    poll = Poll(question=data['question'], options=poll_options, allows_multiple_answers=True, is_anonymous=False, type="quiz")
 
     # отправляем опрос
-    await bot.send_poll(chat_id=message.chat.id, poll=poll)
+    await bot.send_poll(chat_id=message.chat.id, question=data['question'], options=poll_options)
 
     # завершаем работу с состояниями
     await state.finish()
 
-# настраиваем диалоговые сценарии
-dp.register_message_handler(start_poll_handler, commands=['start_poll'], state='*')
-dp.register_message_handler(process_question_handler, state=PollStates.waiting_for_question)
-dp.register_message_handler(process_options_count_handler, state=PollStates.waiting_for_options_count)
-dp.register_message_handler(process_option_handler, state=PollStates.waiting_for_option)
+def picture_start_handlers(dp: Dispatcher):
+    dp.register_message_handler(start_poll_handler, commands=['start_poll'], state=None)
+    dp.register_message_handler(process_question_handler, state=PollStates.waiting_for_question)
+    dp.register_message_handler(process_options_count_handler, state=PollStates.waiting_for_options_count)
+    dp.register_message_handler(process_option_handler, state=PollStates.waiting_for_option)
